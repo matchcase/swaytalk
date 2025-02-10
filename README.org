@@ -5,8 +5,9 @@ You will need to have ~Ollama~ installed and running with ~mistral-nemo~ or anot
 You will also need to have ~fuzzel~ installed.
 To use this program, install the dependencies in ~requirements.txt~ and run ~main.py~.
 * Current Status
-This is currently a work in progress, and only supports *focusing* and *moving*.
-There is planned support for the whole range of options supported by ~swaymsg~.
+All of the runtime-only options from ~swaymsg~ are supported, however only a handful of them can be active at a time when using smaller LLMs.
+If you'd like to activate more of them, add functions from the comment above the ~tools~ list to the list.
+Be careful in adding functions, as adding too many can cause the LLM to output gibberish
 * License
 This program is licensed under GPLv3 or Later.
 © Sarthak Shah (matchcase)
