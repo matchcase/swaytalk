@@ -4,3 +4,9 @@ SwayTalk leverages Ollama and Langchain to let you control Sway or i3 with Natur
 You will need to have ~Ollama~ installed and running with ~mistral-nemo~ or another LLM that supports tool calling.
 You will also need to have ~fuzzel~ installed.
 To use this program, install the dependencies in ~requirements.txt~ and run ~main.py~.
+* Current Status
+This is currently a work in progress, and only supports *focusing* and *moving*.
+There is planned support for the whole range of options supported by ~swaymsg~.
+* License
+This program is licensed under GPLv3 or Later.
+© Sarthak Shah (matchcase)
