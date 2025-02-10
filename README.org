@@ -1,0 +1,6 @@
+#+TITLE:SwayTalk - Control Sway/i3 with Natural Language ✨
+SwayTalk leverages Ollama and Langchain to let you control Sway or i3 with Natural Language!
+* Usage
+You will need to have ~Ollama~ installed and running with ~mistral-nemo~ or another LLM that supports tool calling.
+You will also need to have ~fuzzel~ installed.
+To use this program, install the dependencies in ~requirements.txt~ and run ~main.py~.
