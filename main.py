@@ -1,10 +1,13 @@
 # SwayTalk - © Sarthak Shah (matchcase), 2025
 # Licensed under GPLv3 or Later.
-from langchain_ollama.chat_models import ChatOllama
+from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import ConfigurableField
-from langchain_core.tools import tool
-from langchain.agents import create_tool_calling_agent, AgentExecutor
+from langchain_core.tools import tool, BaseTool
+from langchain.agents import AgentExecutor, create_tool_calling_agent
+from typing import List, Dict, Any, Optional, Callable, Type
+from langchain.callbacks.manager import CallbackManagerForToolRun
+from PyQt6.QtWidgets import QApplication, QInputDialog
 
 from i3ipc import Connection
 
@@ -12,7 +15,7 @@ import subprocess
 
 sway = Connection()
 
-@tool
+
 def border(criteria: str):
     """
     The argument to this function should be a string of the form 'border <arguments>'. Here is a description of the possible arguments:
@@ -29,14 +32,14 @@ def border(criteria: str):
         criteria = "border " + criteria
     sway.command(criteria)
 
-@tool
+
 def exit():
     """
     This function exits the window manager.
     """
     sway.command("exit")
 
-@tool
+
 def floating(criteria: str):
     """
     The argument to this function should be a string of the form 'floating <arguments>'. Here is a description of the possible arguments:
@@ -47,7 +50,7 @@ def floating(criteria: str):
         criteria = "floating " + criteria
     sway.command(criteria)
     
-@tool
+
 def focus(criteria: str):
     """
     The argument to this function should be a string of the form 'focus <arguments>'. Here is a description of the possible arguments:
@@ -84,7 +87,7 @@ def focus(criteria: str):
         criteria = "focus " + criteria
     sway.command(criteria)
 
-@tool
+
 def fullscreen(criteria: str):
     """
     The argument to this function should be a string of the form 'fullscreen <arguments>'. Here is a description of the possible arguments:
@@ -96,7 +99,7 @@ def fullscreen(criteria: str):
         criteria = "fullscreen " + criteria
     sway.command(criteria)
 
-@tool
+
 def gaps(criteria: str):
     """
     The argument to this function should be a string of the form 'gaps <arguments>'. Here is a description of the possible arguments:
@@ -108,7 +111,7 @@ def gaps(criteria: str):
         criteria = "gaps" + criteria
     sway.command(criteria)
 
-@tool
+
 def inhibit_idle(criteria: str):
     """
     The argument to this function should be a string of the form 'inhibit_idle <arguments>'. Here is a description of the possible arguments:
@@ -125,7 +128,7 @@ def inhibit_idle(criteria: str):
         criteria = "inhibit_idle" + criteria
     sway.command(criteria)
 
-@tool
+
 def layout(criteria: str):
     """
     The argument to this function should be a string of the form 'layout <arguments>'. Here is a description of the possible arguments:
@@ -149,7 +152,7 @@ def layout(criteria: str):
         criteria = "layout" + criteria
     sway.command(criteria)
 
-@tool
+
 def max_render_time(max_criteria: str):
     """
     The argument to this function should be a string of the form 'max_render_time <arguments>'. Here is a description of the possible arguments:
@@ -172,7 +175,7 @@ def max_render_time(max_criteria: str):
         max_criteria = "max_render_time" + max_criteria
     sway.command(max_criteria)
 
-@tool
+
 def allow_tearing(criteria: str):
     """
     The argument to this function should be a string of the form 'allow_tearing <arguments>'. Here is a description of the possible arguments:
@@ -187,7 +190,7 @@ def allow_tearing(criteria: str):
         criteria = "allow_tearing" + criteria
     sway.command(criteria)
     
-@tool
+
 def move(criteria: str):
     """
     The argument to this function should be a string of the form 'move <arguments>'. Here is a description of the possible arguments:
@@ -250,14 +253,14 @@ def move(criteria: str):
         criteria = "move " + criteria
     sway.command(criteria)
 
-@tool
+
 def reload():
     """
     This function reloads the sway config file and applies any changes.
     """
     sway.command("reload")
 
-@tool
+
 def rename(criteria: str):
     """
     The argument to this function should be a string of the form 'rename <arguments>'. Here is a description of the possible arguments:
@@ -268,7 +271,7 @@ def rename(criteria: str):
         criteria = "rename" + criteria
     sway.command(criteria)
 
-@tool
+
 def resize(criteria: str):
     """
     The argument to this function should be a string of the form 'resize <arguments>'. Here is a description of the possible arguments:
@@ -296,14 +299,14 @@ def resize(criteria: str):
         criteria = "resize" + criteria
     sway.command(criteria)
 
-@tool
+
 def scratchpad():
     """
     This commands shows the scratchpad.
     """
     sway.command("scratchpad show")
 
-@tool
+
 def shortcuts_inhibitor(criteria: str):
     """
     The argument to this function should be a string of the form 'shortcuts_inhibitor <arguments>'. Here is a description of the possible arguments:
@@ -319,7 +322,7 @@ def shortcuts_inhibitor(criteria: str):
         criteria = "shortcuts_inhibitor" + criteria
     sway.command(criteria)
 
-@tool
+
 def split(criteria: str):
     """
     The argument to this function should be a string of the form 'split <arguments>'. Here is a description of the possible arguments:
@@ -332,7 +335,7 @@ def split(criteria: str):
         criteria = "split" + criteria
     sway.command(criteria)
 
-@tool
+
 def sticky(criteria: str):
     """
     The argument to this function should be a string of the form 'sticky <arguments>'. Here is a description of the possible arguments:
@@ -343,7 +346,7 @@ def sticky(criteria: str):
         criteria = "sticky" + criteria
     sway.command(criteria)
 
-@tool
+
 def swap(criteria: str):
     """
     The argument to this function should be a string of the form 'swap <arguments>'. Here is a description of the possible arguments:
@@ -358,7 +361,7 @@ def swap(criteria: str):
         criteria = "swap" + criteria
     sway.command(criteria)
 
-@tool
+
 def title_format(criteria: str):
     """
     The argument to this function should be a string of the form 'title_format <arguments>'. Here is a description of the possible arguments:
@@ -384,24 +387,166 @@ def title_format(criteria: str):
         criteria = "title_format" + criteria
     sway.command(criteria)
    
+# Create a dictionary to store full function objects with their docstrings
+full_tools = {
+    "focus": focus,
+    "move": move,
+    "fullscreen": fullscreen,
+    "exit": exit,
+    "reload": reload,
+    "split": split,
+    "floating": floating,
+    "layout": layout,
+    "border": border,
+    "gaps": gaps,
+    "inhibit_idle": inhibit_idle,
+    "max_render_time": max_render_time,
+    "allow_tearing": allow_tearing,
+    "rename": rename,
+    "resize": resize,
+    "scratchpad": scratchpad,
+    "shortcuts_inhibitor": shortcuts_inhibitor,
+    "sticky": sticky,
+    "swap": swap,
+    "title_format": title_format,
+}
+
+# Create simplified versions of tools with minimal descriptions
+def create_simplified_tool(tool_name: str, tool_description: str) -> BaseTool:
+    """Create a simplified version of a tool with just its name and a brief description."""
+    class SimplifiedTool(BaseTool):
+        name: str = tool_name
+        description: str = tool_description
+        
+        def _run(self, *args: Any, **kwargs: Any) -> str:
+            return f"Please use get_docstring(tool_name=\"{name}\") first to see documentation, then call execute_code(tool_name=\"{name}\", arguments=\"your_args\")"
+            
+    return SimplifiedTool()
+
+# Simple descriptions for each tool
+tool_descriptions = {
+    "focus": "Focus a window or workspace",
+    "move": "Move a window",
+    "fullscreen": "Toggle fullscreen mode for a window",
+    "exit": "Exit Sway",
+    "reload": "Reload Sway configuration",
+    "split": "Change split direction",
+    "floating": "Toggle floating mode for a window",
+    "layout": "Change the layout of the current workspace",
+    "border": "Set border style",
+    "gaps": "Change inner or outer gaps",
+    "inhibit_idle": "Set or unset idle inhibitor",
+    "max_render_time": "Controls when a window is rendered",
+    "allow_tearing": "Allow or disallow tearing",
+    "rename": "Rename a workspace",
+    "resize": "Resize a window",
+    "scratchpad": "Show the scratchpad",
+    "shortcuts_inhibitor": "Toggle ability to inhibit shortcuts",
+    "sticky": "Sticky a window",
+    "swap": "Swap containers",
+    "title_format": "Set format for window titles",
+}
+
+simplified_tools = [
+    create_simplified_tool(name, desc) 
+    for name, desc in tool_descriptions.items()
+]
+
+class GetDocstringTool(BaseTool):
+    name: str = "get_docstring"
+    description: str = "Get the full documentation for a specific tool"
+    
+    def _run(
+        self, 
+        tool_name: str, 
+        run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
+        """Get the full docstring for a tool.
+        
+        Args:
+            tool_name: The name of the tool to get documentation for
+            
+        Returns:
+            The full docstring of the requested tool
+        """
+        if tool_name not in full_tools:
+            return f"Tool '{tool_name}' not found. Available tools: {', '.join(full_tools.keys())}"
+        
+        tool_doc = full_tools[tool_name].__doc__
+        return f"Documentation for {tool_name}:\n{tool_doc}\n\nNow you can execute this tool with: execute_code(tool_name=\"{tool_name}\", arguments=\"your_args\")"
+
+class ExecuteToolTool(BaseTool):
+    name: str = "execute_code"
+    description: str = "Execute a tool after reviewing its documentation"
+    
+    def _run(
+        self, 
+        tool_name: str,
+        arguments: str = "",
+        run_manager: Optional[CallbackManagerForToolRun] = None
+    ) -> str:
+        """Execute a tool with the provided arguments.
+        
+        Args:
+            tool_name: The name of the tool to execute
+            arguments: The arguments to pass to the tool
+            
+        Returns:
+            The result of executing the tool
+        """
+        if tool_name not in full_tools:
+            return f"Tool '{tool_name}' not found. Available tools: {', '.join(full_tools.keys())}"
+        
+        try:
+            if arguments:
+                return full_tools[tool_name](arguments)
+            else:
+                return full_tools[tool_name]()
+        except Exception as e:
+            return f"Error executing {tool_name}: {str(e)}"
+
+all_tools = simplified_tools + [GetDocstringTool(), ExecuteToolTool()]
+
 prompt = ChatPromptTemplate.from_messages([
-    ("system", "You are an LLM agent that runs commands to manage the Sway window manager. Make sure to only use the tools provided. All your outputs will be strings, and if the tool requires an argument it will be of the form <tool_name>_cmd. Only reply with tool calls."), 
+    ("system", """You are an LLM agent that runs commands to manage the Sway window manager.
+This is VERY IMPORTANT: your response should be brief, and only contain tool calls.
+
+IMPORTANT: You must follow this exact TWO-STEP PROCESS for every tool you use:
+
+STEP 1: First get the tool's documentation by calling get_docstring
+    Example: get_docstring(tool_name="focus")
+
+STEP 2: After reviewing the documentation, execute the tool with proper arguments
+    Example: execute_code(tool_name="focus", arguments="next")
+
+DO NOT try to call any tool directly without first getting its documentation.
+If a user asks you to perform an action like "focus on the next window", you MUST:
+1. First call get_docstring for the relevant tool (get_docstring(tool_name="focus"))
+2. Then call execute_code with the proper arguments (execute_code(tool_name="focus", arguments="next"))
+
+Remember: All outputs are strings. Only use the tools provided.
+**VERY IMPORTANT**:
+THE OUTPUTS SHOULD ONLY BE TOOL CALLS.
+DO NOT OUTPUT ANYTHING OTHER THAN CALL TOOLS.
+DO NOT PROVIDE MULTIPLE EXAMPLES, FOCUS ON ONLY EXECUTING THE BEST ACTION.
+
+When what the user requested is ambiguous, assume that they are talking about the focused window and execute the most likely desired action.
+"""), 
     ("human", "{input}"), 
     ("placeholder", "{agent_scratchpad}"),
 ])
 
-# Add the following only if your LLM has a high context length! Adding any more to mistral-nemo makes it output gibberish
-# border, gaps, inhibit_idle, max_render_time, allow_tearing, rename, resize, scratchpad, shortcuts_inhibitor, sticky, swap, title_format
-tools = [focus, move, fullscreen, exit, reload, split, floating, layout]
-
 llm = ChatOllama(model="mistral-nemo", temperature=0)
 
-agent = create_tool_calling_agent(llm, tools, prompt)
-agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+agent = create_tool_calling_agent(llm, all_tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=all_tools, verbose=True)
 
-result = subprocess.run(["fuzzel", "-d", "-p", "> "], capture_output=True, text=True)
-if result.returncode == 0:
-    agent_executor.invoke({"input": f"{result.stdout.strip()}", })
+# result = subprocess.run(["fuzzel", "-d", "-p", "> "], capture_output=True, text=True)
+# if result.returncode == 0:
+#     agent_executor.invoke({"input": f"{result.stdout.strip()}"})
+app = QApplication([])
+text, ok = QInputDialog.getText(None, "Input Dialog", "Enter your text:")
+if ok:
+    agent_executor.invoke({"input": text})
 else:
     print("No input provided.")
-
